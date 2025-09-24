@@ -1,0 +1,5 @@
+[
+  {"query": "¿Cuál es vuestro horario de atención?", "must_contain": ["9:00", "18:00"]},
+  {"query": "¿Hacéis envíos a Canarias?", "must_contain": ["Canarias"]},
+  {"query": "¿Cuál es la política de devoluciones?", "must_contain": ["30 días"]}
+]
