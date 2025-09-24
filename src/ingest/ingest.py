@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Optional
 
 import faiss
 import numpy as np
@@ -18,7 +19,12 @@ load_dotenv()
 
 EMBED_URL = "https://api.openai.com/v1/embeddings"
 EMBED_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+EMBED_DIM = int(os.getenv("EMBEDDING_DIM", "1536"))
 REQUEST_TIMEOUT = int(os.getenv("OPENAI_TIMEOUT", "60"))
+
+
+def _is_offline() -> bool:
+    return os.getenv("OFFLINE", "0") == "1"
 
 
 def _build_headers() -> dict:
@@ -51,10 +57,21 @@ def get_embedding(text: str) -> np.ndarray:
     return np.array(embedding, dtype="float32")
 
 
-def embed_texts(texts: Iterable[str]) -> List[np.ndarray]:
+def _fake_embedding(text: str) -> np.ndarray:
+    # Deterministic pseudo-embedding for entornos sin red / pruebas locales.
+    seed = int.from_bytes(hashlib.sha256(text.encode("utf-8")).digest()[:8], "little")
+    rng = np.random.default_rng(seed)
+    return rng.standard_normal(EMBED_DIM).astype("float32")
+
+
+def embed_texts(texts: Iterable[str], *, offline: Optional[bool] = None) -> List[np.ndarray]:
+    use_offline = _is_offline() if offline is None else offline
     vectors = []
     for text in texts:
-        vectors.append(get_embedding(text))
+        if use_offline:
+            vectors.append(_fake_embedding(text))
+        else:
+            vectors.append(get_embedding(text))
     if not vectors:
         raise ValueError("El CSV no contiene preguntas/respuestas para indexar")
     return vectors
@@ -93,6 +110,11 @@ def main() -> None:
     parser.add_argument("--csv", required=True, help="Ruta al CSV con FAQs")
     parser.add_argument("--out_index", default="data/index.faiss", help="Destino del índice")
     parser.add_argument("--out_meta", default="data/index_meta.json", help="Destino de metadatos")
+    parser.add_argument(
+        "--offline",
+        action="store_true",
+        help="Genera embeddings deterministas sin llamar a la API de OpenAI",
+    )
     args = parser.parse_args()
 
     csv_path = Path(args.csv)
@@ -101,7 +123,8 @@ def main() -> None:
 
     df = pd.read_csv(csv_path)
     texts = (df["question"].fillna("") + "\n" + df["answer"].fillna("")).tolist()
-    vectors = embed_texts(texts)
+    offline_mode = args.offline or _is_offline()
+    vectors = embed_texts(texts, offline=offline_mode)
 
     index = build_index(vectors)
 

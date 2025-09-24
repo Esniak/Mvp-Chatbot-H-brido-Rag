@@ -1,11 +1,35 @@
 category,question,answer,source_url
-General,¿Cuál es vuestro horario de atención?,Nuestro horario es de lunes a viernes de 9:00 a 18:00 (CET) excepto festivos.,https://www.ejemplo.com/horarios
-Pedidos,¿Cómo puedo hacer seguimiento de mi pedido?,Puedes seguir tu pedido desde tu área de cliente en "Mis pedidos" o con el localizador enviado por email.,https://www.ejemplo.com/seguimiento
-Envíos,¿Hacéis envíos a Canarias?,Sí, enviamos a Canarias. Los plazos y costes se calculan al finalizar la compra.,https://www.ejemplo.com/envios
-Devoluciones,¿Cuál es la política de devoluciones?,Aceptamos devoluciones en 30 días si el producto está en perfecto estado. Reembolso por el mismo método de pago.,https://www.ejemplo.com/devoluciones
-Pagos,¿Qué métodos de pago aceptáis?,Tarjeta, PayPal y transferencia bancaria. No aceptamos contra reembolso.,https://www.ejemplo.com/pagos
-Garantía,¿Qué garantía tienen los productos?,La garantía legal es de 3 años para productos nuevos (condiciones en la web).,https://www.ejemplo.com/garantia
-Soporte,¿Cómo contacto con soporte?,Escríbenos vía formulario o WhatsApp (botón en la web). Respondemos en el mismo día laboral.,https://www.ejemplo.com/contacto
-Privacidad,¿Cómo tratáis mis datos personales?,Usamos tus datos para gestionar tu pedido y soporte. Puedes ejercer derechos ARSOPL en nuestra página de privacidad.,https://www.ejemplo.com/privacidad
-Técnico,¿Puedo cambiar mi dirección tras comprar?,Si el pedido no ha sido enviado, podemos modificar la dirección. Contáctanos cuanto antes.,https://www.ejemplo.com/direcciones
-Técnico,¿Cómo solicito factura con NIF?,En el checkout activa "Necesito factura" e introduce tu NIF. También puedes pedirla a soporte.,https://www.ejemplo.com/facturacion
+General,¿Cuál es vuestro horario de atención?,"Lunes a viernes de 9:00 a 18:00 (CET), excepto festivos.",https://demo.kaabil.es/faq#horario
+General,¿Cómo os contacto?,"Por formulario web o WhatsApp del botón 'Soporte'. Respondemos en el mismo día laboral.",https://demo.kaabil.es/faq#contacto
+General,¿Dónde estáis?,"Tienda online con oficina en Madrid (no abierta al público).",https://demo.kaabil.es/faq#direccion
+Cuenta,¿Cómo creo una cuenta?,"Pulsa 'Registrarse' y confirma el email. Opcional: Google o Apple.",https://demo.kaabil.es/faq#alta
+Cuenta,Olvidé mi contraseña,"Usa '¿Has olvidado tu contraseña?' y sigue el enlace enviado a tu email.",https://demo.kaabil.es/faq#password
+Pedidos,¿Cómo sigo mi pedido?,"Desde 'Mis pedidos' o con el localizador recibido por email.",https://demo.kaabil.es/faq#seguimiento
+Pedidos,¿Puedo modificar la dirección tras comprar?,"Sí, si aún no ha sido enviado. Escríbenos cuanto antes.",https://demo.kaabil.es/faq#cambio-direccion
+Pedidos,¿Puedo cancelar un pedido?,"Si no ha salido del almacén, lo cancelamos y reembolsamos.",https://demo.kaabil.es/faq#cancelacion
+Envíos,¿Enviáis a Canarias?,"Sí. Costes y plazos se calculan al finalizar la compra.",https://demo.kaabil.es/faq#canarias
+Envíos,Plazos de entrega península,"Entre 24 y 72 horas laborables según producto y destino.",https://demo.kaabil.es/faq#plazos
+Envíos,Coste de envío,"Se muestra en el checkout. En pedidos > 60 € suele ser gratis (promos activas).",https://demo.kaabil.es/faq#coste
+Envíos,¿Puedo recoger en punto?,"Sí, ofrecemos puntos de recogida en ciudades principales.",https://demo.kaabil.es/faq#punto
+Devoluciones,¿Cuál es la política de devoluciones?,"30 días naturales si el producto está en perfecto estado.",https://demo.kaabil.es/faq#devoluciones
+Devoluciones,¿Cómo gestiono una devolución?,"Desde 'Mis pedidos' o contáctanos con el número de pedido.",https://demo.kaabil.es/faq#tramite-devolucion
+Devoluciones,Plazo del reembolso,"Procesamos el reembolso en 3–10 días hábiles tras recibir y revisar el producto.",https://demo.kaabil.es/faq#plazo-reembolso
+Pagos,Métodos de pago aceptados,"Tarjeta, PayPal y transferencia. No contra reembolso.",https://demo.kaabil.es/faq#pagos
+Pagos,¿Es seguro pagar?,"Sí. Usamos pasarela cifrada y no almacenamos datos de tarjeta.",https://demo.kaabil.es/faq#seguridad-pago
+Pagos,¿Puedo pagar a plazos?,"Disponible en pedidos seleccionados mediante proveedor externo.",https://demo.kaabil.es/faq#plazos-pago
+Garantía,¿Qué garantía tienen los productos?,"Garantía legal de 3 años para productos nuevos.",https://demo.kaabil.es/faq#garantia
+Garantía,Producto defectuoso a la entrega,"Si llega dañado, notifícalo en 48 h con fotos para cambio sin coste.",https://demo.kaabil.es/faq#daño-transporte
+Productos,Compatibilidad de un artículo,"En la ficha verás compatibilidades. Si dudas, pásanos modelo.",https://demo.kaabil.es/faq#compatibilidad
+Productos,Stock y disponibilidad,"El stock figura en la ficha. Si aparece 'Reserva', daremos fecha estimada.",https://demo.kaabil.es/faq#stock
+Promos,¿Cómo uso un cupón?,"Introduce el código en el checkout y aplica.",https://demo.kaabil.es/faq#cupon
+Promos,¿Acumulan los cupones?,"Salvo indicación contraria, no son acumulables.",https://demo.kaabil.es/faq#cupones-acumulan
+Privacidad,¿Cómo tratáis mis datos?,"Solo para gestionar compra y soporte. Derechos ARSOPL.",https://demo.kaabil.es/faq#privacidad
+Privacidad,¿Borráis mi cuenta si lo pido?,"Sí, desde tu perfil o por email verificado.",https://demo.kaabil.es/faq#borrado
+Soporte,¿Tiempo medio de respuesta?,"En horario laboral, respondemos el mismo día.",https://demo.kaabil.es/faq#sla
+Soporte,¿Tenéis chat en vivo?,"Sí, botón de chat/WhatsApp en la web (horario laboral).",https://demo.kaabil.es/faq#chat
+Técnico,¿Cómo solicito factura con NIF?,"Activa 'Necesito factura' en el checkout o pídela a soporte.",https://demo.kaabil.es/faq#factura
+Técnico,¿Se puede cambiar el email de la cuenta?,"Sí, desde 'Perfil' con verificación del nuevo correo.",https://demo.kaabil.es/faq#cambio-email
+Tienda,¿Tenéis tienda física?,"No, solo online. Algunas recogidas en puntos asociados.",https://demo.kaabil.es/faq#tienda-fisica
+Envíos,¿Qué pasa si no estoy en casa?,"La mensajería reprograma una segunda entrega o deja el paquete en un punto de recogida.",https://demo.kaabil.es/faq#ausente
+Pagos,¿Aplicáis comisiones?,"No cobramos comisiones; tu banco podría aplicar las suyas.",https://demo.kaabil.es/faq#comisiones
+Seguridad,¿Cómo reporto un fraude?,"Escríbenos inmediatamente y cambia tu contraseña.",https://demo.kaabil.es/faq#fraude

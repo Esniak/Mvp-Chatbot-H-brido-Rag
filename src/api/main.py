@@ -2,25 +2,35 @@
 
 from __future__ import annotations
 
+import json
 import os
+import re
+import time
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import List, Tuple
 
 import requests
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel
 
 from src.rag.retriever import Retriever
+from src.common.logs import init_db, log_turn
 
 load_dotenv()
 
 API = FastAPI(title="Kaabil RAG API")
+app = API
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.25))
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-nano")
+SCORE_THRESHOLD = float(os.getenv("SCORE_THRESHOLD", 0.30))
 INDEX_PATH = Path(os.getenv("INDEX_PATH", "data/index.faiss"))
 META_PATH = Path(os.getenv("META_PATH", "data/index_meta.json"))
+RETRIEVAL_TOPK = int(os.getenv("RETRIEVAL_TOPK", "4"))
+
+init_db()
 
 with Path("prompts/system.txt").open("r", encoding="utf-8") as file:
     SYSTEM_PROMPT = file.read()
@@ -28,14 +38,121 @@ with Path("prompts/system.txt").open("r", encoding="utf-8") as file:
 _retriever: Retriever | None = None
 
 
+def _is_offline() -> bool:
+    return os.getenv("OFFLINE", "0") == "1"
+
+
+def _normalize(text: str) -> list[str]:
+    tokens = []
+    for token in text.lower().split():
+        simple = (
+            token.replace("á", "a")
+            .replace("é", "e")
+            .replace("í", "i")
+            .replace("ó", "o")
+            .replace("ú", "u")
+        )
+        if token.isalpha() or simple.isalpha():
+            tokens.append(simple)
+    return tokens
+
+
+def _token_overlap(query: str, document: str) -> float:
+    qs = set(_normalize(query))
+    ds = set(_normalize(document))
+    if not qs:
+        return 0.0
+    return len(qs & ds) / max(1, len(qs))
+
+
+def _select_relevant(
+    evidence: list[tuple[dict, float]], query: str, k: int = 2
+) -> list[tuple[dict, float]]:
+    qn = query.strip().lower()
+    exact = [
+        (doc, score)
+        for doc, score in evidence
+        if qn
+        and (
+            qn in (doc.get("question", "").strip().lower())
+            or (doc.get("question", "").strip().lower()) in qn
+        )
+    ]
+    if exact:
+        return exact[:1]
+
+    scored = [
+        (doc, _token_overlap(query, doc.get("question", "")))
+        for doc, _ in evidence
+    ]
+    scored = [(doc, overlap) for doc, overlap in scored if overlap >= 0.5]
+    scored.sort(key=lambda item: item[1], reverse=True)
+    top = [(doc, 1.0) for doc, _ in scored[:k]]
+    return top or evidence[:1]
+
+
+def _format_citation(doc: dict) -> str:
+    cat = doc.get("category") or doc.get("Category") or "Fuente"
+    question = doc.get("question") or doc.get("Question") or "FAQ"
+    url = doc.get("source_url") or doc.get("url") or ""
+    citation = f"{cat} – {question}".strip()
+    if url:
+        citation = f"{citation} ({url})"
+    return citation
+
+
+def _build_context(evidence: list[tuple[dict, float]]) -> str:
+    sections: list[str] = []
+    for doc, _ in evidence:
+        category = (doc.get("category") or doc.get("Category") or "Información").strip()
+        question = (doc.get("question") or doc.get("Question") or "").strip()
+        answer = (doc.get("answer") or doc.get("Answer") or "").strip()
+
+        lines = [f"Categoría: {category}"]
+        if question:
+            lines.append(f"Pregunta relacionada: {question}")
+        if answer:
+            lines.append(f"Respuesta sugerida: {answer}")
+
+        sections.append("\n".join(lines))
+
+    return "\n\n".join(sections)
+
+
+def _clean_answer(text: str) -> str:
+    if not text:
+        return ""
+
+    cleaned = re.sub(r"\[CAT:[^\]]*\]", "", text)
+    cleaned = re.sub(r"(?im)^\s*(Fuentes?:|Sources?:).*$", "", cleaned)
+    cleaned = re.sub(r"(?im)^\s*(?:Q|A)\s*:\s*", "", cleaned)
+
+    lines: list[str] = []
+    for raw_line in cleaned.splitlines():
+        stripped = raw_line.strip()
+        if not stripped:
+            if lines and lines[-1] != "":
+                lines.append("")
+            continue
+        lines.append(stripped)
+
+    while lines and lines[0] == "":
+        lines.pop(0)
+    while lines and lines[-1] == "":
+        lines.pop()
+
+    return "\n".join(lines)
+
+
 class AskIn(BaseModel):
     query: str
+    show_sources: bool = False
 
 
 class AskOut(BaseModel):
-    answer: str
-    citations: List[str]
-    used_evidence: bool
+    respuesta: str
+    fuentes: List[str] | None = None
+    evidencia: bool | None = None
 
 
 def _load_retriever() -> Retriever:
@@ -58,12 +175,6 @@ def _load_retriever() -> Retriever:
     return _retriever
 
 
-def _format_citation(doc: dict) -> str:
-    source = doc.get("source_url")
-    base = f"{doc['category']} – {doc['question']}"
-    return f"{base} ({source})" if source else base
-
-
 def _call_openai(messages: List[dict]) -> str:
     if not OPENAI_API_KEY:
         raise HTTPException(
@@ -75,7 +186,13 @@ def _call_openai(messages: List[dict]) -> str:
         "Authorization": f"Bearer {OPENAI_API_KEY}",
         "Content-Type": "application/json",
     }
-    payload = {"model": OPENAI_MODEL, "messages": messages, "temperature": 0.0}
+    nano = "gpt-5-nano" in OPENAI_MODEL.lower()
+    payload = {"model": OPENAI_MODEL, "messages": messages}
+    if not nano:
+        payload["temperature"] = 0.0
+    else:
+        for key in ("temperature", "top_p", "presence_penalty", "frequency_penalty"):
+            payload.pop(key, None)
 
     try:
         response = requests.post(
@@ -96,32 +213,59 @@ def _call_openai(messages: List[dict]) -> str:
         raise HTTPException(status_code=502, detail="Respuesta inesperada de OpenAI") from exc
 
 
-@API.post("/ask", response_model=AskOut)
-def ask(payload: AskIn) -> AskOut:
+@API.post("/ask", response_model=AskOut, response_model_exclude_none=True)
+def ask(payload: AskIn, request: Request) -> AskOut:
+    start = time.perf_counter()
+    session_id = request.headers.get("X-Session-Id") or uuid.uuid4().hex
     try:
         retriever = _load_retriever()
     except RuntimeError as exc:
         raise HTTPException(status_code=503, detail=str(exc))
 
+    offline_mode = _is_offline()
     items: List[Tuple[dict, float]] = retriever.search(payload.query)
     evidence = [(doc, score) for doc, score in items if score >= SCORE_THRESHOLD]
+    if offline_mode and not evidence:
+        evidence = items
+    evidence = _select_relevant(evidence, payload.query, k=2)
 
     if not evidence:
-        return AskOut(
-            answer=(
-                "No encuentro información fiable para responder a esto. "
-                "¿Quieres que te ponga con una persona del equipo?"
-            ),
-            citations=[],
-            used_evidence=False,
+        fallback = (
+            "No encuentro información fiable para responder a esto. "
+            "¿Quieres que te ponga con una persona del equipo?"
         )
+        result: dict[str, object] = {"respuesta": _clean_answer(fallback)}
+        if payload.show_sources:
+            result["fuentes"] = []
+            result["evidencia"] = False
+        ask_out = AskOut(**result)
+        latency_ms = int((time.perf_counter() - start) * 1000)
+        try:
+            log_turn(
+                ts=datetime.utcnow().isoformat(timespec="seconds") + "Z",
+                session_id=session_id,
+                ip=(request.client.host if request and request.client else None),
+                user_agent=request.headers.get("User-Agent"),
+                query=payload.query,
+                answer=ask_out.respuesta,
+                used_evidence=1 if (hasattr(ask_out, "evidencia") and ask_out.evidencia) else 0,
+                citations=json.dumps(getattr(ask_out, "fuentes", []) or [], ensure_ascii=False),
+                latency_ms=latency_ms,
+                provider="openai",
+                model=OPENAI_MODEL,
+                topk=RETRIEVAL_TOPK,
+                threshold=SCORE_THRESHOLD,
+            )
+        except Exception:
+            pass
+        return ask_out
 
-    context_lines = [
-        f"[CAT:{doc['category']}] Q:{doc['question']}\nA:{doc['answer']}"
-        for doc, _ in evidence
-    ]
-    citations = [_format_citation(doc) for doc, _ in evidence]
-    context = "\n\n".join(context_lines)
+    context = _build_context(evidence)
+    citations: List[str] = []
+    for doc, _ in evidence:
+        citation = _format_citation(doc)
+        if citation and citation not in citations:
+            citations.append(citation)
 
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -134,8 +278,51 @@ def ask(payload: AskIn) -> AskOut:
         },
     ]
 
-    answer = _call_openai(messages)
-    if citations:
-        answer = f"{answer}\n\nFuentes: {', '.join(citations)}"
+    if offline_mode:
+        exact_doc = next(
+            (
+                doc
+                for doc, _ in evidence
+                if payload.query.strip().lower()
+                and (
+                    payload.query.strip().lower()
+                    in doc.get("question", "").strip().lower()
+                    or doc.get("question", "").strip().lower()
+                    in payload.query.strip().lower()
+                )
+            ),
+            None,
+        )
+        chosen = exact_doc or (evidence[0][0] if evidence else {})
+        answer = (chosen or {}).get("answer", "")
+    else:
+        answer = _call_openai(messages)
 
-    return AskOut(answer=answer, citations=citations, used_evidence=True)
+    clean_answer = _clean_answer(answer)
+    result: dict[str, object] = {"respuesta": clean_answer}
+    if payload.show_sources:
+        result["fuentes"] = citations
+        result["evidencia"] = bool(evidence)
+
+    ask_out = AskOut(**result)
+    latency_ms = int((time.perf_counter() - start) * 1000)
+    try:
+        log_turn(
+            ts=datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            session_id=session_id,
+            ip=(request.client.host if request and request.client else None),
+            user_agent=request.headers.get("User-Agent"),
+            query=payload.query,
+            answer=ask_out.respuesta,
+            used_evidence=1 if (hasattr(ask_out, "evidencia") and ask_out.evidencia) else 0,
+            citations=json.dumps(getattr(ask_out, "fuentes", []) or [], ensure_ascii=False),
+            latency_ms=latency_ms,
+            provider="openai",
+            model=OPENAI_MODEL,
+            topk=RETRIEVAL_TOPK,
+            threshold=SCORE_THRESHOLD,
+        )
+    except Exception:
+        pass
+
+    return ask_out

@@ -1,0 +1,25 @@
+# OS/IDE
+.DS_Store
+.vscode/
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg-info/
+build/
+dist/
+# Entornos
+.venv/
+venv/
+.env
+.env.*
+# Streamlit/otros
+.streamlit/
+.cache/
+logs/
+*.log
+# Artefactos RAG
+data/index.faiss
+data/index_meta.json

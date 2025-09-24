@@ -2,6 +2,7 @@ fastapi
 uvicorn
 faiss-cpu
 pandas
+numpy
 python-dotenv
 requests
 pydantic

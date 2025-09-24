@@ -4,8 +4,9 @@ from __future__ import annotations
 
 import json
 import os
+import hashlib
 from pathlib import Path
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Optional
 
 import faiss
 import numpy as np
@@ -16,8 +17,13 @@ load_dotenv()
 
 EMBED_URL = "https://api.openai.com/v1/embeddings"
 EMBED_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-3-small")
+EMBED_DIM_DEFAULT = int(os.getenv("EMBEDDING_DIM", "1536"))
 TOPK = int(os.getenv("RETRIEVAL_TOPK", 4))
 REQUEST_TIMEOUT = int(os.getenv("OPENAI_TIMEOUT", "60"))
+
+
+def _is_offline() -> bool:
+    return os.getenv("OFFLINE", "0") == "1"
 
 
 def _build_headers() -> dict:
@@ -30,7 +36,16 @@ def _build_headers() -> dict:
     }
 
 
-def get_embedding(text: str) -> np.ndarray:
+def _fake_embedding(text: str, dim: int) -> np.ndarray:
+    seed = int.from_bytes(hashlib.sha256(text.encode("utf-8")).digest()[:8], "little")
+    rng = np.random.default_rng(seed)
+    return rng.standard_normal(dim).astype("float32")
+
+
+def get_embedding(text: str, *, dim: Optional[int] = None) -> np.ndarray:
+    if _is_offline():
+        return _fake_embedding(text, dim or EMBED_DIM_DEFAULT)
+
     payload = {"input": text, "model": EMBED_MODEL}
     headers = _build_headers()
 
@@ -79,7 +94,7 @@ class Retriever:
         self.meta: Sequence[dict] = items
 
     def search(self, query: str) -> List[Tuple[dict, float]]:
-        query_embedding = get_embedding(query)
+        query_embedding = get_embedding(query, dim=self.index.d)
         norm = np.linalg.norm(query_embedding)
         if not norm:
             raise ValueError("El embedding calculado tiene norma cero")
