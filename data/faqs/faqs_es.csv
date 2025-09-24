@@ -1,0 +1,11 @@
+category,question,answer,source_url
+General,¿Cuál es vuestro horario de atención?,Nuestro horario es de lunes a viernes de 9:00 a 18:00 (CET) excepto festivos.,https://www.ejemplo.com/horarios
+Pedidos,¿Cómo puedo hacer seguimiento de mi pedido?,Puedes seguir tu pedido desde tu área de cliente en "Mis pedidos" o con el localizador enviado por email.,https://www.ejemplo.com/seguimiento
+Envíos,¿Hacéis envíos a Canarias?,Sí, enviamos a Canarias. Los plazos y costes se calculan al finalizar la compra.,https://www.ejemplo.com/envios
+Devoluciones,¿Cuál es la política de devoluciones?,Aceptamos devoluciones en 30 días si el producto está en perfecto estado. Reembolso por el mismo método de pago.,https://www.ejemplo.com/devoluciones
+Pagos,¿Qué métodos de pago aceptáis?,Tarjeta, PayPal y transferencia bancaria. No aceptamos contra reembolso.,https://www.ejemplo.com/pagos
+Garantía,¿Qué garantía tienen los productos?,La garantía legal es de 3 años para productos nuevos (condiciones en la web).,https://www.ejemplo.com/garantia
+Soporte,¿Cómo contacto con soporte?,Escríbenos vía formulario o WhatsApp (botón en la web). Respondemos en el mismo día laboral.,https://www.ejemplo.com/contacto
+Privacidad,¿Cómo tratáis mis datos personales?,Usamos tus datos para gestionar tu pedido y soporte. Puedes ejercer derechos ARSOPL en nuestra página de privacidad.,https://www.ejemplo.com/privacidad
+Técnico,¿Puedo cambiar mi dirección tras comprar?,Si el pedido no ha sido enviado, podemos modificar la dirección. Contáctanos cuanto antes.,https://www.ejemplo.com/direcciones
+Técnico,¿Cómo solicito factura con NIF?,En el checkout activa "Necesito factura" e introduce tu NIF. También puedes pedirla a soporte.,https://www.ejemplo.com/facturacion

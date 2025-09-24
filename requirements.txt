@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+faiss-cpu
+pandas
+python-dotenv
+requests
+pydantic
+tqdm
+streamlit
