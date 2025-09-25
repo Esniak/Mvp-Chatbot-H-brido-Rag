@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import json
 import sqlite3
 from datetime import datetime, timedelta
@@ -9,7 +10,15 @@ import pandas as pd
 import streamlit as st
 
 
-DB_PATH = Path("data/logs.db")
+BASE_DIR = Path(__file__).resolve().parents[2]
+ENV_DB = os.getenv("LOG_DB_PATH")
+
+if ENV_DB:
+    candidate = Path(ENV_DB).expanduser()
+    DB_PATH = candidate if candidate.is_absolute() else (BASE_DIR / candidate)
+else:
+    DB_PATH = BASE_DIR / "data" / "logs.db"
+DB_PATH = DB_PATH.resolve()
 
 
 st.set_page_config(page_title="Kaabil RAG - Panel", layout="wide")
@@ -202,4 +211,4 @@ columns_to_show = [
 if show_pii:
     columns_to_show.extend(["ip", "user_agent"])
 
-st.dataframe(table[columns_to_show], use_container_width=True)
+st.dataframe(table[columns_to_show], width="stretch")
